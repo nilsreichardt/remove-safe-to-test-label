@@ -72,7 +72,6 @@ async function run(dependencyOverrides) {
 
 // Export is only used for testing
 module.exports = run;
-module.exports.run = run;
 module.exports.loadDependencies = loadDependencies;
 
 if (require.main === module) {
