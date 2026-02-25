@@ -1,58 +1,77 @@
 # remove-safe-to-test-label
 
-A GitHub Action to remove the "safe to test" label when the PR is from a fork.
+A GitHub Action to automatically remove the `safe to test` label from a Pull Request when new code is pushed.
 
-## Motivation
+This is the "Reset" half of the Label Gate ([verify-safe-to-test-label](https://github.com/nilsreichardt/verify-safe-to-test-label)) security pattern. It ensures that every single commit from a fork is reviewed by a maintainer before sensitive CI/CD tasks are executed.
 
-When you have GitHub Actions using secrets, these secrets are not available for
-PRs from forks. This is a security feature of GitHub Actions. This means that if
-you have a GitHub Action that is triggered by a PR from a fork, it will fail.
+## Why do you need this?
 
-The best solution is to not use GitHub secrets in GitHub Actions that are
-triggered by PRs from forks (see the blog article from GitHub Security Lab:
-[Keeping your GitHub Actions and workflows secure Part 1: Preventing pwn
-requests](https://securitylab.github.com/research/github-actions-preventing-pwn-requests/)).
-However, sometimes this is not possible.
+If you use a "safe to test" label to gate your `pull_request_target` workflows, you are vulnerable to a **"Bait & Switch"** attack:
 
-A workaround is to add a label to the PR when it is safe to test. This label is
-added by the PR reviewer. Your jobs that are using secrets are only triggered
-when this label is present. However, you also need to remove this label when a
-new commit is pushed to the PR so that the change can be reviewed again.
+1.  **The Bait:** An attacker submits a perfectly safe PR.
+2.  **The Hook:** A maintainer reviews the code and adds the `safe to test` label.
+3.  **The Switch:** The attacker immediately pushes a new commit containing malicious code (e.g., a secret-stealing script).
+4.  **The Exploit:** Because the label is still there, your CI runs automatically on the **malicious** code, exposing your secrets.
 
-This GitHub Action removes the "safe to test" label when the PR is from a fork.
-
-To verify if jobs have the "safe to test" label, you can use the
-[verify-safe-to-test-label](https://github.com/SharezoneApp/verify-safe-to-test-label)
-GitHub Action.
+**This action prevents that.** It instantly strips the label the moment a new commit is detected, "locking" the CI until a maintainer re-approves the changes.
 
 ## Usage
 
+This action should be placed at the very beginning of your workflow to ensure the "gate" is closed before any other checks occur.
+
 ```yaml
 on:
-  # This action only works with pull_request and pull_request_target events.
-  # 
-  # For other events, it succeeds with exit code 0.
-  pull_request: # or pull_request_target
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled]
 
 jobs:
-  # It's important that you run this job first, because you need to remove the
-  # "safe to test" label when the PR comes from a fork in order to ensure that
-  # every change is reviewed for security implications. Other jobs should use the
-  # "needs" keyword to depend on this job.
-  remove-safe-to-build-label:
+  gatekeeper:
     runs-on: ubuntu-latest
     permissions:
-      # Required to remove the "safe to test" label
+      # Required: To remove the label via the GitHub API
       contents: read
       pull-requests: write
     steps:
-      - name: Remove "safe to test" label, if PR is from a fork
-        uses: SharezoneApp/remove-safe-to-test-label@v1
+      - name: Reset Safety Status
+        uses: nilsreichardt/remove-safe-to-test-label@v1
 ```
 
-### Inputs
+---
 
-| Name | Description | Default |
-| ---- | ----------- | ------- |
-| `label` | The label to remove | `safe to test` |
-| `repo-token` | The GitHub token to authorize the label changes. Typically the `GITHUB_TOKEN` secret with `contents: read` and `pull-requests: write` access | `github.token` |
+## Inputs
+
+| Name         | Description                                                     | Default        |
+| ------------ | --------------------------------------------------------------- | -------------- |
+| `label`      | The label to remove when a new commit is pushed                 | `safe to test` |
+| `repo-token` | Token used to remove the label. Requires `pull-requests: write` | `github.token` |
+
+## How it works with the "Label Gate"
+
+To fully secure your pipeline, you should use this action alongside **[verify-safe-to-test-label](https://github.com/nilsreichardt/verify-safe-to-test-label)**.
+
+1.  **`remove-safe-to-test-label`** runs first. If the event is `synchronize` (a new push), it deletes the label.
+2.  **`verify-safe-to-test-label`** runs second. It checks if the label exists.
+3.  If the label was just removed (or was never there), the workflow fails safely before secrets are exposed.
+
+### Example Integration
+
+```yaml
+steps:
+  - name: Reset Gate
+    uses: nilsreichardt/remove-safe-to-test-label@v1
+
+  - name: Verify Gate
+    uses: nilsreichardt/verify-safe-to-test-label@v1
+
+  # Secrets are only reached if the steps above pass
+  - name: Run Tests
+    run: npm test
+    env:
+      SECRET_KEY: ${{ secrets.SENSITIVE_DATA }}
+```
+
+---
+
+## Security Note
+
+This action only removes labels on Pull Requests originating from **forks**. It will not interfere with internal PRs from members with write access to the repository, as those are already trusted.
