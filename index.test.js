@@ -1,9 +1,16 @@
+jest.mock('@actions/core', () => ({
+    getInput: jest.fn(),
+    setFailed: jest.fn(),
+}), { virtual: true });
+
+jest.mock('@actions/github', () => ({
+    context: {},
+    getOctokit: jest.fn(),
+}), { virtual: true });
+
 const core = require('@actions/core');
 const github = require('@actions/github');
 const run = require('./index');
-
-jest.mock('@actions/core');
-jest.mock('@actions/github');
 
 describe('remove-safe-to-test-label', () => {
     afterEach(() => {
