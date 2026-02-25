@@ -1,18 +1,21 @@
-jest.mock('@actions/core', () => ({
-    getInput: jest.fn(),
-    setFailed: jest.fn(),
-}), { virtual: true });
-
-jest.mock('@actions/github', () => ({
-    context: {},
-    getOctokit: jest.fn(),
-}), { virtual: true });
-
-const core = require('@actions/core');
-const github = require('@actions/github');
 const run = require('./index');
 
 describe('remove-safe-to-test-label', () => {
+    let core;
+    let github;
+
+    beforeEach(() => {
+        core = {
+            getInput: jest.fn(),
+            setFailed: jest.fn(),
+        };
+
+        github = {
+            context: {},
+            getOctokit: jest.fn(),
+        };
+    });
+
     afterEach(() => {
         jest.clearAllMocks();
     });
@@ -57,7 +60,7 @@ describe('remove-safe-to-test-label', () => {
             },
         });
 
-        await run();
+        await run({ core, github });
 
         expect(github.getOctokit).toHaveBeenCalledWith('fake-token');
         expect(github.getOctokit().rest.issues.removeLabel).toHaveBeenCalledWith({
@@ -108,7 +111,7 @@ describe('remove-safe-to-test-label', () => {
             },
         });
 
-        await run();
+        await run({ core, github });
 
         expect(github.getOctokit).toHaveBeenCalledTimes(0);
         expect(github.getOctokit().rest.issues.removeLabel).toHaveBeenCalledTimes(0);
@@ -138,24 +141,20 @@ describe('remove-safe-to-test-label', () => {
         github.context.payload = payload;
 
         core.getInput.mockReturnValue('safe-to-test');
-        await run();
+        await run({ core, github });
 
         expect(core.setFailed).toHaveBeenCalledTimes(0);
         expect(github.getOctokit).toHaveBeenCalledTimes(0);
     });
 
     test('should fail when there is an error', async () => {
-        const errorMessage = 'An error occurred';
         github.context.eventName = 'pull_request';
         github.context.payload = null;
 
         core.getInput.mockReturnValue('safe-to-test');
 
-        try {
-            await run();
-        } catch (error) {
-            expect(core.setFailed).toHaveBeenCalledWith(errorMessage);
-        }
+        await run({ core, github });
+        expect(core.setFailed).toHaveBeenCalledTimes(1);
     });
 
     test('should handle the error when the label does not exist', async () => {
@@ -201,7 +200,7 @@ describe('remove-safe-to-test-label', () => {
             },
         });
 
-        await run();
+        await run({ core, github });
 
         expect(mockRemoveLabel).toHaveBeenCalledWith({
             owner: 'base-owner',

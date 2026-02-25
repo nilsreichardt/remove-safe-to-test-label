@@ -1,8 +1,19 @@
-const core = require('@actions/core');
-const github = require('@actions/github');
+async function loadDependencies() {
+    const [core, github] = await Promise.all([
+        import('@actions/core'),
+        import('@actions/github'),
+    ]);
 
-async function run() {
+    return { core, github };
+}
+
+async function run(dependencyOverrides) {
+    let core;
+
     try {
+        const { core: loadedCore, github } = dependencyOverrides || await loadDependencies();
+        core = loadedCore;
+
         const context = github.context;
 
         const allowedEvents = ['pull_request', 'pull_request_target'];
@@ -50,12 +61,18 @@ async function run() {
             return;
         }
 
-        core.setFailed(error.message);
+        if (core && typeof core.setFailed === 'function') {
+            core.setFailed(error.message);
+            return;
+        }
+
+        throw error;
     }
 }
 
 // Export is only used for testing
 module.exports = run;
+module.exports.loadDependencies = loadDependencies;
 
 if (require.main === module) {
     run();
