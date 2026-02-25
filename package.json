@@ -1,10 +1,13 @@
 {
-  "name": "remove_safe_to_build_label",
+  "name": "remove-safe-to-test-label",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "lint": "node --check index.js && node --check index.test.js",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "check": "npm run lint && npm test"
   },
   "repository": {
     "type": "git",
