@@ -90,7 +90,17 @@ function isLabelAlreadyGoneError(error) {
     return error?.message === 'Label does not exist' || error?.status === 404;
 }
 
+function isMissingIntegrationPermissionError(error) {
+    return error?.status === 403
+        && typeof error?.message === 'string'
+        && error.message.includes('Resource not accessible by integration');
+}
+
 function getFailureMessage(error) {
+    if (isMissingIntegrationPermissionError(error)) {
+        return 'Failed to remove label because the workflow token lacks required permissions. Ensure your workflow grants `contents: read` and `pull-requests: write`.';
+    }
+
     return error instanceof Error ? error.message : String(error);
 }
 
@@ -111,6 +121,7 @@ module.exports._internals = {
     ALLOWED_EVENTS,
     getFailureMessage,
     isLabelAlreadyGoneError,
+    isMissingIntegrationPermissionError,
     pullRequestHasLabel,
     shouldSkipEvent,
     shouldSkipNonForkPullRequest,
