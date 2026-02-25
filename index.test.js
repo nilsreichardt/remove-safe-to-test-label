@@ -120,6 +120,23 @@ describe('remove-safe-to-test-label', () => {
             'Missing pull request repository metadata in workflow payload.',
         );
     });
+
+    test('fails with a helpful message when token permissions are missing', async () => {
+        const permissionError = new Error(
+            'Resource not accessible by integration - https://docs.github.com/rest/issues/labels#remove-a-label-from-an-issue',
+        );
+        permissionError.status = 403;
+
+        const { core, github } = setup({
+            removeLabel: jest.fn().mockRejectedValue(permissionError),
+        });
+
+        await run({ core, github });
+
+        expect(core.setFailed).toHaveBeenCalledWith(
+            'Failed to remove label because the workflow token lacks required permissions. Ensure your workflow grants `contents: read` and `pull-requests: write`.',
+        );
+    });
 });
 
 function buildForkPayload({ labels = [{ name: 'safe-to-test' }] } = {}) {
