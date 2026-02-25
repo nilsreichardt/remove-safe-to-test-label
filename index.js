@@ -34,15 +34,15 @@ async function run(dependencyOverrides) {
 
         const safeToTestLabelName = core.getInput('label');
 
-        // Check if pull request has the "safe to test" label
+        // Check if pull request has the configured label
         const labels = context.payload.pull_request.labels;
         const safeToTestLabel = labels.find(label => label.name === safeToTestLabelName);
         if (!safeToTestLabel) {
-            console.log(`Pull request does not have the "safe-to-test" label, skipping.`);
+            console.log(`Pull request does not have the "${safeToTestLabelName}" label, skipping.`);
             return;
         }
 
-        // Remove the "safe-to-test" label
+        // Remove the configured label
         const token = core.getInput('repo-token');
         const octokit = new github.getOctokit(token);
         await octokit.rest.issues.removeLabel({
@@ -51,7 +51,7 @@ async function run(dependencyOverrides) {
             issue_number: context.payload.pull_request.number,
             name: safeToTestLabelName,
         });
-        console.log(`Removed the "safe-to-test" label from pull request.`);
+        console.log(`Removed the "${safeToTestLabelName}" label from pull request.`);
     } catch (error) {
         // When multiple actions are executed in a workflow, the action may try
         // to remove a label that was already removed by another action (race

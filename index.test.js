@@ -17,7 +17,7 @@ describe('remove-safe-to-test-label', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        jest.resetAllMocks();
     });
 
     test('should remove the "safe-to-test" label when pull request is from a fork and has the label', async () => {
@@ -212,6 +212,45 @@ describe('remove-safe-to-test-label', () => {
         expect(core.setFailed).toHaveBeenCalledTimes(0); // Ensure setFailed was not called, indicating the action handled the error gracefully.
 
         // Restore console.log to its original implementation
+        consoleSpy.mockRestore();
+    });
+
+    test('should use the configured label name in the missing-label log message', async () => {
+        const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+
+        const payload = {
+            pull_request: {
+                head: {
+                    repo: {
+                        full_name: 'fork-owner/repo',
+                    },
+                },
+                base: {
+                    repo: {
+                        full_name: 'base-owner/repo',
+                    },
+                },
+                labels: [
+                    {
+                        name: 'safe-to-test',
+                    },
+                ],
+                number: 1,
+            },
+            repository: {
+                full_name: 'base-owner/repo',
+            },
+        };
+
+        github.context.eventName = 'pull_request';
+        github.context.payload = payload;
+
+        core.getInput.mockReturnValue('qa-approved');
+
+        await run({ core, github });
+
+        expect(consoleSpy).toHaveBeenCalledWith('Pull request does not have the "qa-approved" label, skipping.');
+
         consoleSpy.mockRestore();
     });
 });
