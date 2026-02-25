@@ -14,4 +14,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       # Replace @main with the commit hash of the latest commit on the pull request branch
-      - uses: SharezoneApp/remove-safe-to-test-label@main
+      - uses: nilsreichardt/remove-safe-to-test-label@main
