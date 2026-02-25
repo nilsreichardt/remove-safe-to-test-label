@@ -6,14 +6,22 @@
   "scripts": {
     "test": "jest"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nilsreichardt/remove-safe-to-test-label.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nilsreichardt/remove-safe-to-test-label/issues"
+  },
+  "homepage": "https://github.com/nilsreichardt/remove-safe-to-test-label#readme",
   "keywords": [],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@actions/core": "^1.10.0",
-    "@actions/github": "^5.1.1"
+    "@actions/core": "^3.0.0",
+    "@actions/github": "^9.0.0"
   },
   "devDependencies": {
-    "jest": "^29.5.0"
+    "jest": "^30.2.0"
   }
 }
