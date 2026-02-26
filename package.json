@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint": "node --check index.js && node --check index.test.js && node --check test/e2e/run-e2e.js",
+    "lint": "node --check index.js && node --check index.test.js && node --check e2e/run-e2e.js",
     "test": "jest",
-    "test:e2e": "node test/e2e/run-e2e.js",
+    "test:e2e": "node e2e/run-e2e.js",
     "test:coverage": "jest --coverage",
     "check": "npm run lint && npm test && npm run test:e2e"
   },

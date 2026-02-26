@@ -4,7 +4,7 @@ const os = require('os');
 const path = require('path');
 const { pathToFileURL } = require('url');
 
-const ROOT = path.resolve(__dirname, '..', '..');
+const ROOT = path.resolve(__dirname, '..');
 const CONTEXT_MODULE_PATH = pathToFileURL(
     path.join(ROOT, 'node_modules', '@actions', 'github', 'lib', 'context.js'),
 ).href;
@@ -197,29 +197,25 @@ let failed = 0;
 })();
 
 function withScenarioEnv({ eventName, eventPath, inputLabel }) {
-    const previous = {
-        GITHUB_ACTIONS: process.env.GITHUB_ACTIONS,
-        GITHUB_EVENT_NAME: process.env.GITHUB_EVENT_NAME,
-        GITHUB_EVENT_PATH: process.env.GITHUB_EVENT_PATH,
-        GITHUB_REPOSITORY: process.env.GITHUB_REPOSITORY,
-        INPUT_LABEL: process.env.INPUT_LABEL,
-        'INPUT_REPO-TOKEN': process.env['INPUT_REPO-TOKEN'],
+    const envsToSet = {
+        GITHUB_ACTIONS: 'true',
+        GITHUB_EVENT_NAME: eventName,
+        GITHUB_EVENT_PATH: eventPath,
+        GITHUB_REPOSITORY: 'base-owner/repo',
+        INPUT_LABEL: inputLabel,
+        'INPUT_REPO-TOKEN': 'test-token',
     };
 
-    process.env.GITHUB_ACTIONS = 'true';
-    process.env.GITHUB_EVENT_NAME = eventName;
-    process.env.GITHUB_EVENT_PATH = eventPath;
-    process.env.GITHUB_REPOSITORY = 'base-owner/repo';
-    process.env.INPUT_LABEL = inputLabel;
-    process.env['INPUT_REPO-TOKEN'] = 'test-token';
+    const previousEnvs = {};
+    for (const name in envsToSet) {
+        previousEnvs[name] = process.env[name];
+        process.env[name] = envsToSet[name];
+    }
 
     return () => {
-        restoreEnvVar('GITHUB_ACTIONS', previous.GITHUB_ACTIONS);
-        restoreEnvVar('GITHUB_EVENT_NAME', previous.GITHUB_EVENT_NAME);
-        restoreEnvVar('GITHUB_EVENT_PATH', previous.GITHUB_EVENT_PATH);
-        restoreEnvVar('GITHUB_REPOSITORY', previous.GITHUB_REPOSITORY);
-        restoreEnvVar('INPUT_LABEL', previous.INPUT_LABEL);
-        restoreEnvVar('INPUT_REPO-TOKEN', previous['INPUT_REPO-TOKEN']);
+        for (const name in previousEnvs) {
+            restoreEnvVar(name, previousEnvs[name]);
+        }
     };
 }
 
