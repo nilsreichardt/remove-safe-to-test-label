@@ -4,7 +4,7 @@ async function run(dependencyOverrides) {
     let core;
 
     try {
-        const { core: loadedCore, github } = dependencyOverrides || await loadDependencies();
+        const { core: loadedCore, github } = dependencyOverrides || loadDependencies();
         core = loadedCore;
 
         const context = github.context;
@@ -41,7 +41,7 @@ async function run(dependencyOverrides) {
     }
 }
 
-async function loadDependencies() {
+function loadDependencies() {
     const core = require('@actions/core');
     const github = require('@actions/github');
     return { core, github };
