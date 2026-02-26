@@ -4,7 +4,7 @@ async function run(dependencyOverrides) {
     let core;
 
     try {
-        const { core: loadedCore, github } = dependencyOverrides || await loadDependencies();
+        const { core: loadedCore, github } = dependencyOverrides || loadDependencies();
         core = loadedCore;
 
         const context = github.context;
@@ -41,12 +41,9 @@ async function run(dependencyOverrides) {
     }
 }
 
-async function loadDependencies() {
-    const [core, github] = await Promise.all([
-        import('@actions/core'),
-        import('@actions/github'),
-    ]);
-
+function loadDependencies() {
+    const core = require('@actions/core');
+    const github = require('@actions/github');
     return { core, github };
 }
 
@@ -127,6 +124,7 @@ module.exports._internals = {
     shouldSkipNonForkPullRequest,
 };
 
+/* istanbul ignore next -- executed only when invoked as entrypoint */
 if (require.main === module) {
     run();
 }
