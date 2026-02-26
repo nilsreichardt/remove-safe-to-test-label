@@ -188,62 +188,6 @@ describe('remove-safe-to-test-label', () => {
         expect(core.setFailed).toHaveBeenCalledWith('boom');
     });
 
-    test('loads action dependencies dynamically', async () => {
-        jest.resetModules();
-        jest.doMock('@actions/core', () => ({
-            getInput: jest.fn(),
-        }), { virtual: true });
-        jest.doMock('@actions/github', () => ({
-            getOctokit: jest.fn(),
-        }), { virtual: true });
-
-        const { loadDependencies } = require('./index');
-        const loaded = await loadDependencies();
-
-        expect(loaded).toHaveProperty('core');
-        expect(loaded).toHaveProperty('github');
-        expect(typeof loaded.core.getInput).toBe('function');
-        expect(typeof loaded.github.getOctokit).toBe('function');
-    });
-
-    test('runs successfully without dependency overrides', async () => {
-        jest.resetModules();
-        const coreMock = {
-            getInput: jest.fn((name) => {
-                if (name === 'label') {
-                    return 'safe-to-test';
-                }
-
-                if (name === 'repo-token') {
-                    return 'fake-token';
-                }
-
-                return '';
-            }),
-            setFailed: jest.fn(),
-        };
-        const removeLabelMock = jest.fn().mockResolvedValue(undefined);
-        const githubMock = {
-            context: buildContext(),
-            getOctokit: jest.fn(() => ({
-                rest: {
-                    issues: {
-                        removeLabel: removeLabelMock,
-                    },
-                },
-            })),
-        };
-
-        jest.doMock('@actions/core', () => coreMock, { virtual: true });
-        jest.doMock('@actions/github', () => githubMock, { virtual: true });
-
-        const runWithoutOverrides = require('./index');
-        await runWithoutOverrides();
-
-        expect(githubMock.getOctokit).toHaveBeenCalledWith('fake-token');
-        expect(removeLabelMock).toHaveBeenCalledTimes(1);
-        expect(coreMock.setFailed).not.toHaveBeenCalled();
-    });
 });
 
 function buildForkPayload({ labels = [{ name: 'safe-to-test' }] } = {}) {

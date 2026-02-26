@@ -4,7 +4,8 @@ async function run(dependencyOverrides) {
     let core;
 
     try {
-        const { core: loadedCore, github } = dependencyOverrides || loadDependencies();
+        /* istanbul ignore next -- fallback path relies on dynamic imports not executable in this Jest vm config */
+        const { core: loadedCore, github } = dependencyOverrides || await loadDependencies();
         core = loadedCore;
 
         const context = github.context;
@@ -41,10 +42,12 @@ async function run(dependencyOverrides) {
     }
 }
 
+/* istanbul ignore next -- dynamic import path is not executable in this Jest vm config */
 function loadDependencies() {
-    const core = require('@actions/core');
-    const github = require('@actions/github');
-    return { core, github };
+    return Promise.all([
+        import('@actions/core'),
+        import('@actions/github'),
+    ]).then(([core, github]) => ({ core, github }));
 }
 
 function shouldSkipEvent(context) {
@@ -126,5 +129,12 @@ module.exports._internals = {
 
 /* istanbul ignore next -- executed only when invoked as entrypoint */
 if (require.main === module) {
-    run();
+    run()
+        .then(() => {
+            process.exit(process.exitCode || 0);
+        })
+        .catch((error) => {
+            console.error(getFailureMessage(error));
+            process.exit(1);
+        });
 }

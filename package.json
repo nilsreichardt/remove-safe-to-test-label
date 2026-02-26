@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint": "node --check index.js && node --check index.test.js",
+    "lint": "node --check index.js && node --check index.test.js && node --check test/e2e/run-e2e.js",
     "test": "jest",
+    "test:e2e": "node test/e2e/run-e2e.js",
     "test:coverage": "jest --coverage",
-    "check": "npm run lint && npm test"
+    "check": "npm run lint && npm test && npm run test:e2e"
   },
   "repository": {
     "type": "git",
