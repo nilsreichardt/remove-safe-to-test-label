@@ -1,3 +1,6 @@
+> [!NOTE]
+> This action is now part of the [verify-safe-to-test-label](https://github.com/nilsreichardt/verify-safe-to-test-label). Please use [verify-safe-to-test-label](https://github.com/nilsreichardt/verify-safe-to-test-label) with `require-reapproval`.
+
 # remove-safe-to-test-label
 
 <a href="https://codecov.io/gh/nilsreichardt/remove-safe-to-test-label"><img src="https://codecov.io/gh/nilsreichardt/remove-safe-to-test-label/branch/main/graph/badge.svg" alt="codecov"></a>
